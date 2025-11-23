@@ -2,9 +2,9 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  user: { username: string } | null;
+  user: { email: string } | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,13 +23,17 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<{ email: string } | null>(null);
 
-  const login = async (username: string, password: string) => {
-    // Placeholder login logic
-    // In a real app, this would call an API
+  const login = async (email: string, password: string) => {
+    // Simple validation: treat any non-empty email/password as success
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
+
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
-    setUser({ username });
+    setUser({ email });
     setIsAuthenticated(true);
   };
 
