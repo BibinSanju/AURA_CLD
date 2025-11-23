@@ -1,6 +1,6 @@
 # AURA Mobile - AI Assistant React Native App
 
-An Expo React Native application with TypeScript featuring an Aura-themed UI (dark background with purple-pink gradients) and AI assistant capabilities.
+An Expo React Native application with TypeScript featuring an Aura-themed UI (dark background with purple-pink gradients) and AI assistant capabilities with **full voice recognition support**.
 
 ## Features
 
@@ -8,14 +8,16 @@ An Expo React Native application with TypeScript featuring an Aura-themed UI (da
 - **Dashboard**: Quick access to Chatbot and Settings
 - **Chat Interface**: 
   - Talk to AURA AI Assistant
+  - **Full Voice Recognition** with real-time speech-to-text
   - Markdown support for code blocks
   - Message history with timestamps
   - Online/offline status indicator
+  - Visual "Listening..." feedback
 - **Device Actions**:
   - Open YouTube (with or without search query)
   - Open WhatsApp (with optional phone number and message)
   - Flashlight control (on/off)
-- **Voice Input**: Basic voice input support (placeholder implementation)
+- **Voice Commands**: Speak naturally to control the app
 - **Client-side Commands**: Quick local command parsing for instant actions
 
 ## Tech Stack
@@ -24,6 +26,7 @@ An Expo React Native application with TypeScript featuring an Aura-themed UI (da
 - **Language**: TypeScript
 - **UI**: React Native with Expo Linear Gradient
 - **Navigation**: React Navigation (Native Stack)
+- **Voice Recognition**: @react-native-voice/voice
 - **Markdown**: react-native-markdown-display
 - **Icons**: @expo/vector-icons (Ionicons)
 
@@ -31,8 +34,8 @@ An Expo React Native application with TypeScript featuring an Aura-themed UI (da
 
 - Node.js (v16 or higher)
 - npm or yarn
-- Expo CLI
-- Android Studio (for Android development)
+- Expo account (for building APK)
+- EAS CLI (already installed)
 - Physical Android device or emulator
 
 ## Installation
@@ -58,7 +61,23 @@ An Expo React Native application with TypeScript featuring an Aura-themed UI (da
    EXPO_PUBLIC_API_BASE_URL=http://your-backend-url:3000
    ```
 
-## Running the App
+## Building Android APK
+
+### Quick Start (EAS Cloud Build - Recommended)
+
+```bash
+# Login to Expo
+eas login
+
+# Build APK
+eas build --platform android --profile preview
+
+# Download and install the APK on your device
+```
+
+See [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) for detailed build instructions.
+
+## Running the App (Development)
 
 ### Development Mode
 
@@ -67,17 +86,31 @@ Start the Expo development server:
 npm start
 ```
 
+**Note**: Voice recognition requires a native build (APK). It won't work in Expo Go.
+
 ### Android
 
 ```bash
 npm run android
 ```
 
-### iOS (macOS only)
+## Voice Commands
 
-```bash
-npm run ios
-```
+The app supports full voice recognition. Press and hold the microphone button, then speak:
+
+### Voice Command Examples:
+- **"Open YouTube"** - Opens YouTube app
+- **"Play cats on YouTube"** - Searches YouTube for "cats"
+- **"Turn on flashlight"** - Activates flashlight
+- **"Turn off flashlight"** - Deactivates flashlight
+- **"Send WhatsApp to +1234567890: Hello there"** - Opens WhatsApp with message
+
+### How Voice Works:
+1. Tap the microphone icon
+2. Speak your command
+3. Watch the "Listening..." indicator
+4. The recognized text appears in the input field
+5. Send or edit before sending
 
 ## Project Structure
 
@@ -92,7 +125,7 @@ src/
 ├── screens/
 │   ├── LoginScreen.tsx         # Login with validation
 │   ├── DashboardScreen.tsx     # Main dashboard
-│   └── ChatScreen.tsx          # Chat interface
+│   └── ChatScreen.tsx          # Chat interface with voice recognition
 ├── services/
 │   ├── api.ts                  # API client for backend
 │   └── deviceActions.ts        # Device control functions
@@ -163,13 +196,19 @@ type DeviceIntent =
 
 The app requires the following Android permissions:
 - `CAMERA` - For flashlight control
-- `RECORD_AUDIO` - For voice input (future implementation)
+- `RECORD_AUDIO` - For voice recognition
+
+These are automatically requested when needed.
 
 ## Known Limitations
 
 1. **Flashlight**: The current flashlight implementation is a placeholder. Full torch control requires native implementation or a dedicated flashlight package.
 
-2. **Voice Input**: Basic placeholder implementation. Full speech-to-text requires additional setup and permissions.
+2. **Voice Recognition**: 
+   - Requires native build (APK) - won't work in Expo Go
+   - Requires Google services on Android device
+   - Requires internet connection for speech recognition
+   - Language is set to English (en-US)
 
 3. **Network**: Ensure your backend API is accessible from the device/emulator.
 
@@ -179,14 +218,22 @@ The app requires the following Android permissions:
 - Make sure the backend is running
 - Update `EXPO_PUBLIC_API_BASE_URL` in `.env`
 - For Android emulator, use `http://10.0.2.2:3000` instead of `localhost:3000`
+- For physical device, use your computer's local IP
+
+### Voice recognition not working
+- Build and install the APK (doesn't work in Expo Go)
+- Ensure microphone permission is granted
+- Check that Google services are installed on device
+- Test with a simple command like "Hello"
 
 ### Flashlight not working
 - Ensure camera permissions are granted
 - Flashlight requires native implementation for production use
 
-### Navigation issues
+### Build issues
 - Clear Expo cache: `npx expo start -c`
 - Reinstall dependencies: `rm -rf node_modules && npm install`
+- Check EAS build status: `eas build:list`
 
 ## License
 
@@ -195,3 +242,12 @@ MIT
 ## Contributing
 
 Pull requests are welcome! Please ensure all changes follow the existing code style and structure.
+
+## Support
+
+For detailed build instructions, see [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)
+
+For issues:
+- Expo docs: https://docs.expo.dev
+- EAS Build: https://docs.expo.dev/build/introduction/
+- Voice library: https://github.com/react-native-voice/voice

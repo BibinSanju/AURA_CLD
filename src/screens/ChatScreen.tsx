@@ -10,10 +10,11 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  PermissionsAndroid,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
+import Voice from '@react-native-voice/voice';
 import { GradientBackground } from '../theme/GradientBackground';
 import { colors } from '../theme/colors';
 import { MessageBubble } from '../components/MessageBubble';
@@ -40,6 +41,18 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
   const [isListening, setIsListening] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  // Initialize Voice recognition
+  useEffect(() => {
+    Voice.onSpeechStart = onSpeechStart;
+    Voice.onSpeechEnd = onSpeechEnd;
+    Voice.onSpeechResults = onSpeechResults;
+    Voice.onSpeechError = onSpeechError;
+
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
   // Scroll to bottom when messages change
   useEffect(() => {
     if (messages.length > 0) {
@@ -48,6 +61,85 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
       }, 100);
     }
   }, [messages]);
+
+  // Voice event handlers
+  const onSpeechStart = () => {
+    setIsListening(true);
+  };
+
+  const onSpeechEnd = () => {
+    setIsListening(false);
+  };
+
+  const onSpeechResults = (e: any) => {
+    if (e.value && e.value[0]) {
+      setInputText(e.value[0]);
+    }
+    setIsListening(false);
+  };
+
+  const onSpeechError = (e: any) => {
+    console.error('Speech recognition error:', e);
+    setIsListening(false);
+    Alert.alert('Voice Error', 'Failed to recognize speech. Please try again.');
+  };
+
+  /**
+   * Request microphone permission for Android
+   */
+  const requestMicrophonePermission = async (): Promise<boolean> => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'Microphone Permission',
+            message: 'AURA needs access to your microphone for voice input',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Handle voice input
+   */
+  const handleVoiceInput = async () => {
+    if (isListening) {
+      // Stop listening
+      try {
+        await Voice.stop();
+        setIsListening(false);
+      } catch (error) {
+        console.error('Error stopping voice:', error);
+      }
+      return;
+    }
+
+    // Request permission
+    const hasPermission = await requestMicrophonePermission();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Microphone permission is required for voice input');
+      return;
+    }
+
+    // Start listening
+    try {
+      await Voice.start('en-US');
+      setIsListening(true);
+    } catch (error) {
+      console.error('Error starting voice:', error);
+      Alert.alert('Voice Error', 'Failed to start voice recognition. Please try again.');
+    }
+  };
 
   /**
    * Client-side command parser for quick local commands
@@ -183,19 +275,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
     }
   };
 
-  /**
-   * Handle voice input (basic implementation)
-   */
-  const handleVoiceInput = () => {
-    // For now, just show an alert
-    // Full implementation would use expo-speech-recognition or similar
-    Alert.alert(
-      'Voice Input',
-      'Voice input would be implemented using speech recognition. For now, please type your message.',
-      [{ text: 'OK' }]
-    );
-  };
-
   return (
     <GradientBackground>
       <KeyboardAvoidingView
@@ -231,21 +310,30 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>Start a conversation with AURA</Text>
               <Text style={styles.emptySubtext}>Try: "Open YouTube" or "Turn on flashlight"</Text>
+              <Text style={styles.emptySubtext}>Tap the mic icon to use voice commands</Text>
             </View>
           }
         />
 
+        {/* Listening Indicator */}
+        {isListening && (
+          <View style={styles.listeningIndicator}>
+            <View style={styles.listeningDot} />
+            <Text style={styles.listeningText}>Listening...</Text>
+          </View>
+        )}
+
         {/* Input Bar */}
         <View style={styles.inputContainer}>
           <TouchableOpacity
-            style={styles.voiceButton}
+            style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
             onPress={handleVoiceInput}
             disabled={isLoading}
           >
             <Ionicons
               name={isListening ? 'mic' : 'mic-outline'}
               size={24}
-              color={isListening ? colors.secondary : colors.textSecondary}
+              color={isListening ? colors.error : colors.textSecondary}
             />
           </TouchableOpacity>
 
@@ -337,6 +425,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center',
+    marginTop: 4,
+  },
+  listeningIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: colors.cardOverlay,
+    borderTopWidth: 1,
+    borderTopColor: colors.cardBorder,
+  },
+  listeningDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.error,
+    marginRight: 8,
+  },
+  listeningText: {
+    fontSize: 14,
+    color: colors.error,
+    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -351,6 +461,10 @@ const styles = StyleSheet.create({
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  voiceButtonActive: {
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    borderRadius: 20,
   },
   input: {
     flex: 1,
