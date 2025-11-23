@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GradientBackground } from '../theme/GradientBackground';
 import { colors } from '../theme/colors';
@@ -12,37 +12,50 @@ type DashboardScreenProps = {
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const { user, logout } = useAuth();
 
+  const handleSettingsPress = () => {
+    Alert.alert('Coming soon', 'Settings feature will be available soon!');
+  };
+
   return (
     <GradientBackground>
       <View style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Welcome, {user?.username || 'User'}!</Text>
+          <View>
+            <Text style={styles.title}>AURA Assistant</Text>
+            <Text style={styles.subtitle}>{user?.email || 'user@example.com'}</Text>
+          </View>
           <TouchableOpacity style={styles.logoutButton} onPress={logout}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Quick Actions</Text>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => navigation.navigate('Chat')}
-            >
-              <Text style={styles.actionButtonText}>Open Chat</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Main Cards */}
+        <View style={styles.content}>
+          <TouchableOpacity
+            style={styles.largeCard}
+            onPress={() => navigation.navigate('Chat')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.cardIcon}>💬</Text>
+            <Text style={styles.cardTitle}>Chatbot</Text>
+            <Text style={styles.cardDescription}>
+              Chat with AURA AI Assistant
+            </Text>
+          </TouchableOpacity>
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Devices</Text>
-            <Text style={styles.placeholderText}>No devices connected</Text>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Recent Activity</Text>
-            <Text style={styles.placeholderText}>No recent activity</Text>
-          </View>
-        </ScrollView>
+          <TouchableOpacity
+            style={styles.largeCard}
+            onPress={handleSettingsPress}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.cardIcon}>⚙️</Text>
+            <Text style={styles.cardTitle}>Settings</Text>
+            <Text style={styles.cardDescription}>
+              Configure app preferences
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </GradientBackground>
   );
@@ -55,58 +68,63 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 20,
   },
-  welcomeText: {
-    fontSize: 24,
+  title: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   logoutButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    backgroundColor: colors.cardOverlay,
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
   logoutText: {
     color: colors.textSecondary,
     fontSize: 14,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    justifyContent: 'center',
+    gap: 20,
   },
-  card: {
+  largeCard: {
     backgroundColor: colors.cardOverlay,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    padding: 20,
+    padding: 32,
+    alignItems: 'center',
+    minHeight: 180,
+    justifyContent: 'center',
+  },
+  cardIcon: {
+    fontSize: 48,
     marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  actionButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  placeholderText: {
-    color: colors.textMuted,
+  cardDescription: {
     fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });

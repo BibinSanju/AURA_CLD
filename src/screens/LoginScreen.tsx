@@ -1,16 +1,47 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { GradientBackground } from '../theme/GradientBackground';
 import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 
 export const LoginScreen = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '' });
   const { login } = useAuth();
 
+  const validateFields = (): boolean => {
+    const newErrors = { email: '', password: '' };
+    let isValid = true;
+
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+      isValid = false;
+    }
+
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleLogin = async () => {
-    await login(username, password);
+    if (!validateFields()) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await login(email, password);
+    } catch (error) {
+      Alert.alert('Login Failed', error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,23 +56,40 @@ export const LoginScreen = () => {
 
           <View style={styles.card}>
             <TextInput
-              style={styles.input}
-              placeholder="Username"
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="Email"
               placeholderTextColor={colors.textMuted}
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrors(prev => ({ ...prev, email: '' }));
+              }}
               autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!loading}
             />
+            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+
             <TextInput
-              style={styles.input}
+              style={[styles.input, errors.password && styles.inputError]}
               placeholder="Password"
               placeholderTextColor={colors.textMuted}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrors(prev => ({ ...prev, password: '' }));
+              }}
               secureTextEntry
+              editable={!loading}
             />
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Sign In</Text>
+            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -88,7 +136,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: colors.textPrimary,
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  inputError: {
+    borderColor: colors.error,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   button: {
     backgroundColor: colors.primary,
@@ -96,6 +153,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: colors.textPrimary,
